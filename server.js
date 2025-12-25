@@ -12,7 +12,7 @@ async function connectDb() {
         pool = mysql.createPool({
             host: 'localhost',
             user: 'root',
-            password: 'Pocoshit8!', // Your Password
+            password: 'my pass', // Your Password
             database: 'LibraryDB',
             port: 3306,
             waitForConnections: true,
@@ -190,5 +190,6 @@ app.get('/api/reports/status-chart', async (req, res) => {
 });
 
 app.get('/api/notifications', (req, res) => res.json({ unread: [], read: [] }));
+
 
 connectDb().then(() => { app.listen(port, () => console.log(`🚀 Server running on port ${port}`)); });
