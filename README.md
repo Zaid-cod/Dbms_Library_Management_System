@@ -1,2 +1,2 @@
-# Dbms_Library_Management_System
-Library_Management_System
+# NextJS_DBMS
+DBMS Final Project

@@ -1,0 +1,16 @@
+/* Custom Styles overriding Tailwind defaults */
+.sidebar {
+    background: linear-gradient(180deg, #002147 0%, #003366 100%);
+}
+
+.active-nav-link {
+    background: rgba(255, 255, 255, 0.1);
+    border-left: 4px solid #FFC107;
+}
+
+/* Smooth transitions */
+.transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+}

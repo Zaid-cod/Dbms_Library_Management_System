@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bahria Library - Admin Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            /* BAHRIA UNIVERSITY THEME */
+            --color-primary: #002147;       /* Bahria Blue */
+            --color-primary-dark: #00152e;
+            --color-accent: #FFC107;        /* Bahria Gold */
+            --bg-light: #F3F4F6;
+            --text-dark: #1F2937;
+        }
+        
+        body { font-family: 'Quicksand', sans-serif; background-color: var(--bg-light); color: var(--text-dark); }
+
+        /* Sidebar */
+        .sidebar { background: linear-gradient(180deg, var(--color-primary) 0%, #003366 100%); }
+        
+        /* Interactive Elements */
+        .card { 
+            background: white; border-radius: 12px; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
+            transition: transform 0.2s; 
+        }
+        .card:hover { transform: translateY(-2px); }
+
+        .btn-primary { 
+            background: var(--color-primary); color: white; transition: 0.2s; 
+        }
+        .btn-primary:hover { background: var(--color-primary-dark); }
+
+        .nav-link { color: rgba(255, 255, 255, 0.7); transition: all 0.3s; border-left: 4px solid transparent; }
+        .nav-link:hover { background: rgba(255, 255, 255, 0.1); color: white; }
+        .nav-link.active { background: rgba(255, 255, 255, 0.15); border-left-color: var(--color-accent); color: white; }
+
+        /* Utility */
+        .content-panel { display: none; }
+        .content-panel.active { display: block; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Modal Overlay */
+        .modal-overlay { background-color: rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body class="h-screen overflow-hidden flex">
+
+    <div id="login-page-wrapper" class="fixed inset-0 z-50 flex items-center justify-center bg-blue-900">
+        <div class="card p-10 w-full max-w-md">
+            <div class="text-center mb-8">
+                <i class="fas fa-university text-5xl text-blue-900"></i>
+                <h1 class="text-3xl font-bold text-gray-800 mt-4">Bahria Library</h1>
+                <p class="text-gray-500">LMS Admin Portal</p>
+            </div>
+            <form id="loginForm">
+                <div class="mb-4">
+                    <label class="block text-sm font-bold mb-2">Email</label>
+                    <input type="email" id="loginEmail" required class="w-full p-3 border rounded focus:ring-2 focus:ring-blue-900 outline-none" placeholder="librarian@library.com">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-bold mb-2">Password</label>
+                    <input type="password" id="loginPassword" required class="w-full p-3 border rounded focus:ring-2 focus:ring-blue-900 outline-none" placeholder="••••••">
+                </div>
+                <button type="submit" class="btn-primary w-full py-3 rounded font-bold text-lg">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="dashboard-wrapper" class="flex w-full h-full hidden">
+        
+        <div class="sidebar w-64 flex-shrink-0 flex-col text-white hidden md:flex shadow-xl">
+            <div class="p-6 border-b border-white/10 flex items-center gap-3">
+                <i class="fas fa-book-reader text-2xl text-yellow-400"></i>
+                <div>
+                    <h1 class="text-xl font-bold">Bahria LMS</h1>
+                    <p class="text-xs text-gray-400 uppercase tracking-wide">Admin Panel</p>
+                </div>
+            </div>
+            <nav class="flex-1 overflow-y-auto py-4">
+                <a href="#" data-target="dashboard-panel" class="nav-link active flex items-center px-6 py-3"><i class="fas fa-tachometer-alt w-6"></i> Dashboard</a>
+                <a href="#" data-target="books-panel" class="nav-link flex items-center px-6 py-3"><i class="fas fa-book w-6"></i> Catalog</a>
+                <a href="#" data-target="orders-panel" class="nav-link flex items-center px-6 py-3"><i class="fas fa-exchange-alt w-6"></i> Circulation</a>
+                <a href="#" data-target="customers-panel" class="nav-link flex items-center px-6 py-3"><i class="fas fa-id-card w-6"></i> Members</a>
+                <a href="#" data-target="genres-panel" class="nav-link flex items-center px-6 py-3"><i class="fas fa-tags w-6"></i> Genres</a>
+                <a href="#" data-target="authors-panel" class="nav-link flex items-center px-6 py-3"><i class="fas fa-feather-alt w-6"></i> Authors</a>
+                <a href="#" data-target="publishers-panel" class="nav-link flex items-center px-6 py-3"><i class="fas fa-building w-6"></i> Publishers</a>
+                <a href="#" data-target="reports-panel" class="nav-link flex items-center px-6 py-3"><i class="fas fa-chart-line w-6"></i> Reports</a>
+            </nav>
+            <div class="p-4 border-t border-white/10 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-yellow-500 flex items-center justify-center text-blue-900 font-bold">L</div>
+                <div><p class="font-medium text-sm">Librarian</p><p class="text-xs text-green-400">● Online</p></div>
+                <button onclick="logout()" class="ml-auto text-gray-400 hover:text-white"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+        </div>
+
+        <div class="flex-1 flex flex-col bg-gray-50 overflow-hidden">
+            <header class="bg-white shadow-sm h-16 flex items-center justify-between px-6 shrink-0">
+                <h2 id="page-title" class="text-xl font-bold text-gray-800">Dashboard</h2>
+                <div class="flex items-center gap-4">
+                    <button onclick="loadDashboard()" class="text-gray-500 hover:text-blue-900"><i class="fas fa-sync-alt"></i> Refresh</button>
+                </div>
+            </header>
+
+            <main class="p-6 overflow-y-auto">
+                
+                <div id="dashboard-panel" class="content-panel active">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="card p-6 border-l-4 border-blue-900">
+                            <p class="text-gray-500 text-xs font-bold uppercase">Total Books</p>
+                            <h3 id="total-books-value" class="text-3xl font-bold text-gray-800 mt-2">--</h3>
+                        </div>
+                        <div class="card p-6 border-l-4 border-yellow-500">
+                            <p class="text-gray-500 text-xs font-bold uppercase">Active Issues</p>
+                            <h3 id="total-orders-value" class="text-3xl font-bold text-gray-800 mt-2">--</h3>
+                        </div>
+                        <div class="card p-6 border-l-4 border-green-600">
+                            <p class="text-gray-500 text-xs font-bold uppercase">Fines Collected</p>
+                            <h3 id="total-revenue-value" class="text-3xl font-bold text-gray-800 mt-2">--</h3>
+                        </div>
+                        <div class="card p-6 border-l-4 border-purple-500">
+                            <p class="text-gray-500 text-xs font-bold uppercase">Members</p>
+                            <h3 id="new-customers-value" class="text-3xl font-bold text-gray-800 mt-2">--</h3>
+                        </div>
+                    </div>
+                    <div class="card p-6">
+                        <h3 class="font-bold text-lg mb-4">Recent Activity</h3>
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-100 text-gray-600 uppercase text-xs"><tr><th class="p-3">ID</th><th class="p-3">Member</th><th class="p-3">Date</th><th class="p-3">Status</th></tr></thead>
+                            <tbody id="recent-orders-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="books-panel" class="content-panel">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold">Library Catalog</h2>
+                        <button onclick="showAddBookForm()" class="btn-primary px-4 py-2 rounded shadow"><i class="fas fa-plus mr-2"></i> Add Book</button>
+                    </div>
+                    <div id="books-list-container"></div>
+                    
+                    <div id="addBookFormSectionInBooksPanel" class="hidden mt-6 bg-white p-6 rounded shadow border">
+                        <h3 class="font-bold text-lg mb-4 text-blue-900">Book Details</h3>
+                        <form id="booksPanelAddBookForm">
+                            <input type="hidden" name="bookIdForEdit" id="bookIdForEdit">
+                            <div class="grid grid-cols-2 gap-4 mb-4">
+                                <input name="title" id="bookTitle" placeholder="Book Title" class="border p-2 rounded" required>
+                                <input name="isbn" id="bookISBN" placeholder="ISBN" class="border p-2 rounded">
+                                <select name="authorId" id="bookAuthor" class="border p-2 rounded" required></select>
+                                <select name="publisherId" id="bookPublisher" class="border p-2 rounded" required></select>
+                                <input name="genre" id="bookGenre" placeholder="Genre" class="border p-2 rounded">
+                                <input type="number" name="stock" id="bookStock" placeholder="Copies" class="border p-2 rounded" required>
+                                <select name="format" id="bookFormat" class="border p-2 rounded"><option>Hardcover</option><option>Paperback</option></select>
+                                <input type="date" name="publicationDate" id="bookPublicationDate" class="border p-2 rounded" required>
+                            </div>
+                            <div class="flex justify-end gap-2">
+                                <button type="button" onclick="document.getElementById('addBookFormSectionInBooksPanel').classList.add('hidden')" class="px-4 py-2 border rounded">Cancel</button>
+                                <button type="submit" class="btn-primary px-6 py-2 rounded">Save Book</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="orders-panel" class="content-panel">
+                    <h2 class="text-2xl font-bold mb-6">Circulation Management</h2>
+                    <div class="card p-6">
+                        <button onclick="openIssueModal()" class="btn-primary px-4 py-2 rounded mb-4"><i class="fas fa-book-reader mr-2"></i> Issue Book</button>
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-100 text-gray-600 uppercase text-xs"><tr><th class="p-3">Issue ID</th><th class="p-3">Member</th><th class="p-3">Status</th><th class="p-3 text-right">Action</th></tr></thead>
+                            <tbody id="all-orders-tbody"></tbody>
+                        </table>
+                        
+                        <div id="createOrderFormSection" class="hidden mt-6 bg-blue-50 p-4 rounded border border-blue-100">
+                            <h3 class="font-bold mb-3 text-blue-900">Issue Book to Member</h3>
+                            <form id="createOrderForm">
+                                <div class="grid grid-cols-2 gap-4 mb-4">
+                                    <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1">Member</label><select id="orderCustomerId" class="w-full border p-2 rounded bg-white" required></select></div>
+                                    <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1">Book</label><div id="orderItemsContainer"></div></div>
+                                </div>
+                                <div class="flex justify-end gap-2">
+                                    <button type="button" onclick="document.getElementById('createOrderFormSection').classList.add('hidden')" class="px-4 py-2 border rounded bg-white">Cancel</button>
+                                    <button type="submit" class="btn-primary px-6 py-2 rounded">Confirm Issue</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="customers-panel" class="content-panel">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold">Members</h2>
+                        <button onclick="document.getElementById('addCustomerFormSection').classList.remove('hidden')" class="btn-primary px-4 py-2 rounded"><i class="fas fa-plus mr-2"></i> New Member</button>
+                    </div>
+                    <div class="card p-6">
+                        <table class="w-full text-sm text-left mb-6"><tbody id="customers-tbody"></tbody></table>
+                        <div id="addCustomerFormSection" class="hidden bg-gray-50 p-4 rounded border">
+                            <h4 class="font-bold mb-2">Member Details</h4>
+                            <form id="addCustomerForm">
+                                <input type="hidden" name="customerIdForEdit" id="customerIdForEdit">
+                                <div class="grid grid-cols-2 gap-4 mb-4">
+                                    <input name="firstName" id="custFirstName" placeholder="First Name" class="border p-2 rounded" required>
+                                    <input name="lastName" id="custLastName" placeholder="Last Name" class="border p-2 rounded" required>
+                                    <input name="email" id="custEmail" placeholder="Email" class="border p-2 rounded" required>
+                                    <input name="phone" id="custPhone" placeholder="Phone" class="border p-2 rounded">
+                                </div>
+                                <button type="submit" class="btn-primary px-4 py-2 rounded">Save Member</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="genres-panel" class="content-panel">
+                    <h2 class="text-2xl font-bold mb-6">Genres</h2>
+                    <div class="card p-6">
+                        <div class="flex gap-2 mb-4">
+                            <input id="genreNameInput" placeholder="New Genre Name" class="border p-2 rounded flex-1">
+                            <button onclick="submitGenre()" class="btn-primary px-4 py-2 rounded">Add Genre</button>
+                        </div>
+                        <ul id="genre-list-ul"></ul>
+                    </div>
+                </div>
+
+                <div id="authors-panel" class="content-panel">
+                    <h2 class="text-2xl font-bold mb-6">Authors</h2>
+                    <div class="card p-6">
+                        <button onclick="addSimpleItem('authors', 'Author Name')" class="btn-primary px-4 py-2 rounded mb-4">Add Author</button>
+                        <table class="w-full text-sm text-left"><tbody id="authors-tbody"></tbody></table>
+                    </div>
+                </div>
+
+                <div id="publishers-panel" class="content-panel">
+                    <h2 class="text-2xl font-bold mb-6">Publishers</h2>
+                    <div class="card p-6">
+                        <button onclick="addSimpleItem('publishers', 'Publisher Name')" class="btn-primary px-4 py-2 rounded mb-4">Add Publisher</button>
+                        <table class="w-full text-sm text-left"><tbody id="publishers-tbody"></tbody></table>
+                    </div>
+                </div>
+
+                <div id="reports-panel" class="content-panel">
+                    <h2 class="text-2xl font-bold mb-6">Library Reports</h2>
+                    <div class="card p-6">
+                        </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+<script src="notifications.js"></script>
+<script>
+    // --- 1. CORE API HELPER ---
+    async function fetchAPI(url, options = {}) {
+        try {
+            const res = await fetch(url, options);
+            if (!res.ok) { 
+                const err = await res.json(); 
+                throw new Error(err.error || `Request failed: ${res.status}`); 
+            }
+            return await res.json();
+        } catch (e) {
+            console.error(e);
+            alert(e.message);
+            return null;
+        }
+    }
+
+    // --- 2. DISPLAY FUNCTIONS (Matched to your Server.js) ---
+
+    // CIRCULATION (Fixes #undefined error)
+    async function displayAllOrders() {
+        const issues = await fetchAPI('/api/all-orders');
+        const tbody = document.getElementById('all-orders-tbody');
+        
+        // Server sends: { id, member, date, status }
+        tbody.innerHTML = issues?.map(r => `
+            <tr class="border-b hover:bg-gray-50">
+                <td class="p-3">#${r.id}</td>
+                <td class="p-3 font-medium text-gray-800">${r.member}</td>
+                <td class="p-3 text-gray-600">${new Date(r.date).toLocaleDateString()}</td>
+                <td class="p-3"><span class="${getOrderStatusClass(r.status)}">${r.status}</span></td>
+                <td class="p-3 text-right">
+                    ${r.status === 'Borrowed' || r.status === 'Overdue' ? 
+                        `<button onclick="returnBook(${r.id})" class="text-green-600 hover:text-green-800 font-bold text-xs border border-green-200 bg-green-50 px-2 py-1 rounded">Return</button>` : 
+                        '<span class="text-gray-400 text-xs">Closed</span>'}
+                </td>
+            </tr>
+        `).join('') || '<tr><td colspan="5" class="p-4 text-center text-gray-500">No active issues found.</td></tr>';
+    }
+
+    // ISSUE BOOK MODAL (Fixes "Cant issue to student")
+    async function openIssueModal() {
+        document.getElementById('createOrderFormSection').classList.remove('hidden');
+        
+        // Load Data
+        const customers = await fetchAPI('/api/customers'); // Returns: { id, firstname, lastname ... }
+        const books = await fetchAPI('/api/books');         // Returns: { id, title, stock ... }
+        
+        // Populate Members Dropdown
+        const custSelect = document.getElementById('orderCustomerId');
+        if (customers) {
+            custSelect.innerHTML = `<option value="">Select Member</option>` + 
+                customers.map(c => `<option value="${c.id}">${c.firstname} ${c.lastname} (ID: ${c.id})</option>`).join('');
+        }
+
+        // Populate Books Dropdown
+        const itemContainer = document.getElementById('orderItemsContainer');
+        if (books) {
+            itemContainer.innerHTML = `
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Select Book</label>
+                <select name="bookId" class="w-full border p-2 rounded bg-white focus:ring-2 focus:ring-blue-900 outline-none">
+                    ${books.map(b => `<option value="${b.id}">${b.title} (Stock: ${b.stock})</option>`).join('')}
+                </select>
+            `;
+        }
+    }
+
+    // DASHBOARD (Fixes "Undefined" in Recent Activity)
+    async function loadDashboard() {
+        const kpis = await fetchAPI('/api/kpis');
+        if(kpis) {
+            document.getElementById('total-books-value').innerText = kpis.totalBooks;
+            document.getElementById('total-orders-value').innerText = kpis.totalOrders;
+            document.getElementById('new-customers-value').innerText = kpis.newCustomers;
+            document.getElementById('total-revenue-value').innerText = 'Rs ' + kpis.totalRevenue;
+        }
+        
+        const recent = await fetchAPI('/api/recent-orders');
+        const tbody = document.getElementById('recent-orders-tbody');
+        // Server sends: { id, member, date, status }
+        if(recent && tbody) {
+            tbody.innerHTML = recent.map(r => `
+                <tr class="border-b">
+                    <td class="p-3">#${r.id}</td>
+                    <td class="p-3 font-bold text-gray-700">${r.member}</td>
+                    <td class="p-3 text-gray-500">${new Date(r.date).toLocaleDateString()}</td>
+                    <td class="p-3"><span class="${getOrderStatusClass(r.status)}">${r.status}</span></td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    // BOOKS (Fixes "Stock: undefined")
+    async function displayAllBooks() {
+        const books = await fetchAPI('/api/books');
+        const container = document.getElementById('books-list-container');
+        // Server sends: { id, title, author, genre, stock, cover... }
+        if(books && container) {
+            container.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">` + 
+            books.map(b => `
+                <div class="flex gap-4 p-4 border rounded shadow-sm bg-white relative group hover:shadow-md transition">
+                    <img src="${b.cover}" class="w-16 h-24 object-cover rounded shadow">
+                    <div class="flex-1">
+                        <h4 class="font-bold text-blue-900 line-clamp-1">${b.title}</h4>
+                        <p class="text-xs text-gray-500">${b.author || 'Unknown Author'}</p>
+                        <div class="mt-2 flex gap-2">
+                            <span class="text-xs bg-gray-100 px-2 py-1 rounded">Stock: ${b.stock}</span>
+                            <span class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded">${b.genre || 'General'}</span>
+                        </div>
+                    </div>
+                    <div class="absolute top-2 right-2 hidden group-hover:flex gap-1">
+                        <button onclick="editBook(${b.id}, '${b.title}', '${b.genre}', ${b.stock}, '${b.isbn}')" class="text-gray-400 hover:text-blue-500 p-1"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteEntity('books', ${b.id})" class="text-gray-400 hover:text-red-500 p-1"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            `).join('') + `</div>`;
+        }
+    }
+
+    // MEMBERS (Fixes display)
+    async function displayAllCustomers() {
+        const members = await fetchAPI('/api/customers');
+        const tbody = document.getElementById('customers-tbody');
+        // Server sends: { id, firstname, lastname, email, phone }
+        if(members && tbody) {
+            tbody.innerHTML = `<tr class="bg-gray-100 text-xs font-bold text-gray-600 uppercase text-left"><th class="p-3">Name</th><th class="p-3">Contact</th><th class="p-3 text-right">Actions</th></tr>` +
+            members.map(m => `
+                <tr class="border-b bg-white hover:bg-gray-50">
+                    <td class="p-3 font-medium text-gray-800">${m.firstname} ${m.lastname}</td>
+                    <td class="p-3 text-sm text-gray-600">${m.email}<br>${m.phone}</td>
+                    <td class="p-3 text-right flex justify-end gap-2">
+                        <button onclick="editMember(${m.id}, '${m.firstname}', '${m.lastname}', '${m.email}', '${m.phone}')" class="text-blue-500 hover:bg-blue-50 p-2 rounded"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteEntity('customers', ${m.id})" class="text-red-500 hover:bg-red-50 p-2 rounded"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    // --- 3. ACTIONS ---
+
+    // Issue Book Submit
+    document.getElementById('createOrderForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const bookSelect = e.target.querySelector('select[name="bookId"]');
+        const memberSelect = document.getElementById('orderCustomerId');
+        
+        const bookId = bookSelect.value;
+        const memberId = memberSelect.value;
+
+        if(!bookId || !memberId) { alert("Please select both a Member and a Book"); return; }
+
+        const res = await fetchAPI('/api/issue-book', { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify({ memberId, bookId }) 
+        });
+        
+        if(res) {
+            alert('Book Issued Successfully!');
+            document.getElementById('createOrderFormSection').classList.add('hidden');
+            displayAllOrders(); 
+            loadDashboard(); // Update KPIs
+        }
+    });
+
+    async function returnBook(id) {
+        if(confirm('Mark this book as returned?')) {
+            if(await fetchAPI(`/api/return-book/${id}`, { method: 'PUT' })) {
+                displayAllOrders(); 
+                loadDashboard();
+            }
+        }
+    }
+
+    async function deleteEntity(ep, id) {
+        if(confirm('Delete this record?')) {
+            if(await fetchAPI(`/api/${ep}/${id}`, { method: 'DELETE' })) {
+                // Refresh Current Panel
+                if(ep === 'books') displayAllBooks();
+                if(ep === 'customers') displayAllCustomers();
+                if(ep === 'genres') displayGenres();
+                if(ep === 'authors') displayAuthors();
+                if(ep === 'publishers') displayPublishers();
+                loadDashboard();
+            }
+        }
+    }
+
+    // --- 4. NAVIGATION & INIT ---
+
+    // Status Colors Helper
+    function getOrderStatusClass(status) {
+        const s = (status || '').toLowerCase();
+        if (s === 'borrowed') return 'bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold';
+        if (s === 'returned') return 'bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold';
+        if (s === 'overdue') return 'bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold';
+        return 'bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs';
+    }
+
+    // Nav Logic
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+            link.classList.add('active');
+            document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
+            const targetId = link.dataset.target;
+            document.getElementById(targetId).classList.add('active');
+            
+            // Trigger Data Load
+            if (targetId === 'dashboard-panel') loadDashboard();
+            if (targetId === 'books-panel') displayAllBooks();
+            if (targetId === 'orders-panel') displayAllOrders();
+            if (targetId === 'customers-panel') displayAllCustomers();
+            if (targetId === 'genres-panel') displayGenres();
+            if (targetId === 'authors-panel') displayAuthors();
+            if (targetId === 'publishers-panel') displayPublishers();
+            if (targetId === 'reports-panel') loadReports();
+        });
+    });
+
+    // Helper Stubs for other panels (to prevent crash if you navigate there)
+    async function displayGenres() { const d = await fetchAPI('/api/genres'); renderSimpleTable('genre-list-ul', d, 'id', 'name', 'genres'); }
+    async function displayAuthors() { const d = await fetchAPI('/api/authors'); renderSimpleTable('authors-tbody', d, 'id', 'name', 'authors'); }
+    async function displayPublishers() { const d = await fetchAPI('/api/publishers'); renderSimpleTable('publishers-tbody', d, 'id', 'name', 'publishers'); }
+    async function loadReports() { /* Keep existing report logic or use placeholders */ }
+
+    // Simple Table Renderer for Genres/Authors/Publishers
+    function renderSimpleTable(elId, data, idKey, nameKey, ep) {
+        const el = document.getElementById(elId);
+        if(!el) return;
+        // Check if it's a UL or Table
+        if(el.tagName === 'UL') {
+             el.innerHTML = data?.map(i => `<li class="flex justify-between p-3 border-b hover:bg-gray-50"><span>${i[nameKey]}</span><button onclick="deleteEntity('${ep}', ${i[idKey]})" class="text-red-500"><i class="fas fa-trash"></i></button></li>`).join('') || '';
+        } else {
+             el.innerHTML = data?.map(i => `<tr class="border-b"><td class="p-3">${i[nameKey]}</td><td class="p-3 text-right"><button onclick="deleteEntity('${ep}', ${i[idKey]})" class="text-red-500"><i class="fas fa-trash"></i></button></td></tr>`).join('') || '';
+        }
+    }
+
+    // Auto Login Check
+    if (sessionStorage.getItem('isLoggedIn') === 'true') {
+        document.getElementById('login-page-wrapper').classList.add('hidden');
+        document.getElementById('dashboard-wrapper').classList.remove('hidden');
+        loadDashboard();
+    }
+
+    // Logout
+    document.getElementById('logout-button')?.addEventListener('click', () => {
+        sessionStorage.removeItem('isLoggedIn');
+        location.reload();
+    });
+</script>
+</body>
+</html>
